@@ -1,0 +1,44 @@
+@import './styles/stratum.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  font-family: var(--font-sans);
+  background: var(--ink-900);
+  color: var(--ink-100);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* ReactFlow overrides */
+.react-flow__background { background: var(--ink-900) !important; }
+.react-flow__controls {
+  background: var(--surface-overlay) !important;
+  border: 1px solid var(--ink-700) !important;
+  border-radius: var(--r-md) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(8px);
+}
+.react-flow__controls-button {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--ink-700) !important;
+  fill: var(--ink-300) !important;
+}
+.react-flow__controls-button:hover { fill: var(--ink-50) !important; }
+.react-flow__controls-button:last-child { border-bottom: none !important; }
+.react-flow__minimap {
+  background: var(--surface-overlay) !important;
+  border: 1px solid var(--ink-700) !important;
+  border-radius: var(--r-md) !important;
+}
+.react-flow__edge-path { stroke: var(--ink-500) !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--ink-700); border-radius: 3px; }
