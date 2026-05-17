@@ -17,13 +17,13 @@ export const kafkaTemplate: ComponentTemplate = {
     coordinator: 'kraft',
   },
   config_schema: {
-    version:           { type: 'select', label: 'Version', options: ['3.5', '3.6', '3.7'] },
-    broker_count:      { type: 'number', label: 'Broker count', min: 1, max: 100 },
-    partition_count:   { type: 'number', label: 'Default partition count', min: 1, max: 1000 },
-    replication_factor:{ type: 'number', label: 'Replication factor', min: 1, max: 10 },
-    retention_hours:   { type: 'number', label: 'Retention (hours)', min: 1 },
-    jvm_heap_gb:       { type: 'number', label: 'JVM heap (GB)', min: 1, max: 64 },
-    coordinator:       { type: 'select', label: 'Coordinator', options: ['zookeeper', 'kraft'] },
+    version:            { type: 'select', label: 'Version', options: ['3.5', '3.6', '3.7'] },
+    broker_count:       { type: 'number', label: 'Broker count', min: 1, max: 100 },
+    partition_count:    { type: 'number', label: 'Default partition count', min: 1, max: 1000 },
+    replication_factor: { type: 'number', label: 'Replication factor', min: 1, max: 10 },
+    retention_hours:    { type: 'number', label: 'Retention (hours)', min: 1 },
+    jvm_heap_gb:        { type: 'number', label: 'JVM heap (GB)', min: 1, max: 64 },
+    coordinator:        { type: 'select', label: 'Coordinator', options: ['zookeeper', 'kraft'] },
   },
 
   // ── Axis 1 — Service internals ──────────────────────────────────────────
@@ -31,39 +31,66 @@ export const kafkaTemplate: ComponentTemplate = {
     d1: {
       label: 'Streaming objects',
       nodes: [
-        { id: 'topic',           label: 'Topic',              drillable: true },
-        { id: 'consumer_group',  label: 'Consumer group',     drillable: true },
-        { id: 'producer',        label: 'Producer',           drillable: false },
-        { id: 'connector',       label: 'Connector',          drillable: false },
-        { id: 'schema_registry', label: 'Schema (Registry)',  drillable: false },
-      ],
-    },
-    d2: {
-      label: 'Distribution & storage model',
-      parent: 'topic',
-      nodes: [
-        { id: 'partition',    label: 'Partition',           drillable: true, tooltip: 'Unit of parallelism and ordering. One active consumer per partition per group.' },
-        { id: 'offset',       label: 'Offset',              drillable: false },
-        { id: 'replica',      label: 'Replica',             drillable: false },
-        { id: 'isr',          label: 'ISR (in-sync reps)',  drillable: false, tooltip: 'Replicas caught up to leader. acks=all waits for all ISR members — losing ISR members raises tail latency.' },
-        { id: 'leader',       label: 'Leader / follower',   drillable: false },
-        { id: 'log_segment',  label: 'Log segment (.log)',  drillable: false, tooltip: 'Sequential binary file of messages. Active segment is append-only; closed segments are immutable.' },
-        { id: 'offset_index', label: 'Offset index (.index)',drillable: false, tooltip: 'Sparse index: offset → byte position in .log. Allows O(log n) seek without reading the whole log.' },
-        { id: 'time_index',   label: 'Time index (.timeindex)',drillable: false },
-        { id: 'retention',    label: 'Retention policy',    drillable: false },
-      ],
-    },
-    d3: {
-      label: 'Java internals',
-      parent: 'partition',
-      nodes: [
-        { id: 'LogSegment',       label: 'LogSegment',       drillable: false, tooltip: 'Represents one .log + .index + .timeindex triplet. Manages append, read, and truncation.' },
-        { id: 'AbstractIndex',    label: 'AbstractIndex',    drillable: false, tooltip: 'Base class for OffsetIndex and TimeIndex. Uses MappedByteBuffer (mmap) for zero-copy access.' },
-        { id: 'RecordBatch',      label: 'RecordBatch',      drillable: false, tooltip: 'Wire format unit: magic byte, attributes, first/last offsets, timestamps, records[].' },
-        { id: 'MemoryRecords',    label: 'MemoryRecords',    drillable: false, tooltip: 'Immutable wrapper around a ByteBuffer of serialised batches. Producer and broker share this type.' },
-        { id: 'KafkaChannel',     label: 'KafkaChannel',     drillable: false, tooltip: 'Wraps a NIO SocketChannel. Holds inbound TransportLayer + send queue of NetworkSend objects.' },
-        { id: 'ByteBufferSend',   label: 'ByteBufferSend',   drillable: false, tooltip: 'Send implementation backed by a ByteBuffer. Written to the NIC via channel.write() / sendfile().' },
-        { id: 'ProducerBatch',    label: 'ProducerBatch',    drillable: false, tooltip: 'Client-side accumulator: batches records in a MemoryRecords buffer before sending.' },
+        {
+          id: 'topic', label: 'Topic', drillable: true,
+          tooltip: 'Click body to cross-link. Click ↓ to drill into distribution & storage model.',
+          d2: {
+            label: 'Distribution & storage model',
+            nodes: [
+              {
+                id: 'partition', label: 'Partition', drillable: true,
+                tooltip: 'Unit of parallelism and ordering. One active consumer per partition per group.',
+                d3: {
+                  label: 'Java internals — partition',
+                  nodes: [
+                    { id: 'LogSegment',     label: 'LogSegment',     drillable: false, tooltip: 'Represents one .log + .index + .timeindex triplet. Manages append, read, and truncation.' },
+                    { id: 'AbstractIndex',  label: 'AbstractIndex',  drillable: false, tooltip: 'Base class for OffsetIndex and TimeIndex. Uses MappedByteBuffer (mmap) for zero-copy access.' },
+                    { id: 'RecordBatch',    label: 'RecordBatch',    drillable: false, tooltip: 'Wire format unit: magic byte, attributes, first/last offsets, timestamps, records[].' },
+                    { id: 'MemoryRecords',  label: 'MemoryRecords',  drillable: false, tooltip: 'Immutable wrapper around a ByteBuffer of serialised batches. Producer and broker share this type.' },
+                    { id: 'KafkaChannel',   label: 'KafkaChannel',   drillable: false, tooltip: 'Wraps a NIO SocketChannel. Holds inbound TransportLayer + send queue of NetworkSend objects.' },
+                    { id: 'ByteBufferSend', label: 'ByteBufferSend', drillable: false, tooltip: 'Send implementation backed by a ByteBuffer. Written to the NIC via channel.write() / sendfile().' },
+                    { id: 'ProducerBatch',  label: 'ProducerBatch',  drillable: false, tooltip: 'Client-side accumulator: batches records in a MemoryRecords buffer before sending.' },
+                  ],
+                },
+              },
+              { id: 'offset',      label: 'Offset',                  drillable: false },
+              { id: 'replica',     label: 'Replica',                  drillable: false },
+              { id: 'isr',         label: 'ISR (in-sync reps)',       drillable: false, tooltip: 'Replicas caught up to leader. acks=all waits for all ISR members — losing ISR members raises tail latency.' },
+              { id: 'leader',      label: 'Leader / follower',        drillable: false },
+              {
+                id: 'log_segment', label: 'Log segment (.log)', drillable: true,
+                tooltip: 'Sequential binary file of messages. Active segment is append-only; closed segments are immutable.',
+                d3: {
+                  label: 'Java internals — log segment',
+                  nodes: [
+                    { id: 'LogSegment',    label: 'LogSegment',    drillable: false, tooltip: 'Represents one .log + .index + .timeindex triplet. Manages append, read, and truncation.' },
+                    { id: 'AbstractIndex', label: 'AbstractIndex', drillable: false, tooltip: 'Base class for OffsetIndex and TimeIndex. Uses MappedByteBuffer (mmap) for zero-copy access.' },
+                  ],
+                },
+              },
+              { id: 'offset_index', label: 'Offset index (.index)',      drillable: false, tooltip: 'Sparse index: offset → byte position in .log. Allows O(log n) seek without reading the whole log.' },
+              { id: 'time_index',   label: 'Time index (.timeindex)',     drillable: false },
+              { id: 'retention',    label: 'Retention policy',           drillable: false },
+            ],
+          },
+        },
+        {
+          id: 'consumer_group', label: 'Consumer group', drillable: true,
+          tooltip: 'Click body to cross-link. Click ↓ to drill into group internals.',
+          d2: {
+            label: 'Consumer group internals',
+            nodes: [
+              { id: 'cg_member',           label: 'Member (consumer)',    drillable: false, tooltip: 'One consumer instance in the group. Gets assigned N partitions. Sends heartbeats every heartbeat.interval.ms.' },
+              { id: 'partition_assignment', label: 'Partition assignment', drillable: false, tooltip: 'Range or RoundRobin assignor splits partitions across members. Sticky assignor minimises reassignment on rebalance.' },
+              { id: 'committed_offset',     label: 'Committed offset',     drillable: false, tooltip: 'Stored in __consumer_offsets topic. This is where the group resumes after restart or rebalance.' },
+              { id: 'heartbeat',            label: 'Heartbeat',            drillable: false, tooltip: 'session.timeout.ms: if no heartbeat in this window, member is declared dead and rebalance triggers.' },
+              { id: 'rebalance',            label: 'Rebalance',            drillable: false, tooltip: 'Triggered by member join/leave/timeout. ALL consumption stops during classic rebalance — major latency spike.' },
+            ],
+          },
+        },
+        { id: 'producer',        label: 'Producer',             drillable: false },
+        { id: 'connector',       label: 'Connector',            drillable: false },
+        { id: 'schema_registry', label: 'Schema (Registry)',    drillable: false },
       ],
     },
   },
@@ -74,17 +101,17 @@ export const kafkaTemplate: ComponentTemplate = {
       {
         id: 'hardware', name: 'Hardware',
         components: [
-          { id: 'cpu',     label: 'CPU',    drillable: true, sub_chips: [
+          { id: 'cpu',    label: 'CPU',    drillable: true, sub_chips: [
             { id: 'cpu_cores', label: 'CPU cores',          drillable: false },
             { id: 'l3_cache',  label: 'L3 cache',           drillable: false },
             { id: 'runqueue',  label: 'Scheduler runqueue', drillable: false },
           ]},
-          { id: 'memory',  label: 'Memory (page cache!)', drillable: true, tooltip: 'Most of RAM should go to OS page cache — not JVM heap', sub_chips: [
+          { id: 'memory', label: 'Memory (page cache!)', drillable: true, tooltip: 'Most of RAM should go to OS page cache — not JVM heap', sub_chips: [
             { id: 'dram',      label: 'DRAM',           drillable: false },
             { id: 'ram_pages', label: 'RAM pages (4KB)', drillable: false },
             { id: 'tlb',       label: 'TLB',            drillable: false },
           ]},
-          { id: 'disk',    label: 'Disk (sequential)', drillable: true, tooltip: 'Sequential writes only — spinning HDD is acceptable for Kafka', sub_chips: [
+          { id: 'disk',   label: 'Disk (sequential)', drillable: true, tooltip: 'Sequential writes only — spinning HDD is acceptable for Kafka', sub_chips: [
             { id: 'block_dev', label: 'Block device',          drillable: false },
             { id: 'fs_layer',  label: 'Filesystem (ext4/xfs)', drillable: false },
             { id: 'sectors',   label: 'Disk sectors (512B)',   drillable: false },
@@ -99,19 +126,31 @@ export const kafkaTemplate: ComponentTemplate = {
       {
         id: 'os', name: 'Host OS',
         components: [
-          { id: 'page_cache', label: 'OS page cache',     drillable: false, tooltip: 'Kafka data lives here — not in JVM heap. Producer writes land here; consumer reads come from here.' },
-          { id: 'sendfile',   label: 'sendfile()',        drillable: false, tooltip: 'Zero-copy consumer path: page cache → NIC. No data ever enters userspace. This is why Kafka is fast.' },
-          { id: 'epoll',      label: 'epoll',             drillable: false },
-          { id: 'vfs',        label: 'VFS',               drillable: false },
-          { id: 'scheduler',  label: 'OS scheduler',      drillable: false },
-          { id: 'tcp_buffers',label: 'Kernel TCP buffers',drillable: false },
+          { id: 'page_cache',  label: 'OS page cache',      drillable: false, tooltip: 'Kafka data lives here — not in JVM heap. Producer writes land here; consumer reads come from here.' },
+          { id: 'sendfile',    label: 'sendfile()',          drillable: false, tooltip: 'Zero-copy consumer path: page cache → NIC. No data ever enters userspace. This is why Kafka is fast.' },
+          { id: 'epoll',       label: 'epoll',              drillable: false },
+          { id: 'vfs',         label: 'VFS',                drillable: false },
+          { id: 'scheduler',   label: 'OS scheduler',       drillable: false },
+          { id: 'tcp_buffers', label: 'Kernel TCP buffers', drillable: false },
         ],
       },
       {
         id: 'process', name: 'Process',
         components: [
-          { id: 'kafka_server', label: 'kafka-server', drillable: false, tooltip: 'Single JVM process. All broker logic — LogManager, ReplicaManager, controller — runs in this one process.' },
-          { id: 'zk_kraft',     label: 'ZooKeeper / KRaft', drillable: false, tooltip: 'Coordination: leader election, topic config, ISR updates. KRaft removes the ZooKeeper dependency in 3.3+.' },
+          { id: 'kafka_server', label: 'kafka-server',       drillable: false, tooltip: 'Single JVM process. All broker logic — LogManager, ReplicaManager, controller — runs in this one process.' },
+          { id: 'zk_kraft',     label: 'ZooKeeper / KRaft',  drillable: false, tooltip: 'Coordination: leader election, topic config, ISR updates. KRaft removes the ZooKeeper dependency in 3.3+.' },
+        ],
+      },
+      {
+        id: 'threads', name: 'Threads',
+        nested_in: 'process',
+        components: [
+          { id: 'net_handler',    label: 'network-handler-thread × N', drillable: false, tooltip: 'Accepts client connections and reads inbound request bytes via NIO selectors.' },
+          { id: 'req_handler',    label: 'request-handler-thread × N', drillable: false, tooltip: 'num.io.threads (default 8). Processes requests off the network queue — produce, fetch, metadata.' },
+          { id: 'io_thread',      label: 'I/O thread × N',             drillable: false, tooltip: 'Reads/writes log segment files on disk. Separate pool from network threads.' },
+          { id: 'ctrl_thread',    label: 'controller thread',          drillable: false, tooltip: 'Manages partition leadership and ISR changes across the cluster.' },
+          { id: 'fetcher_thread', label: 'replica-fetcher-thread',     drillable: false, tooltip: 'Follower brokers run one fetcher thread per leader they replicate from.' },
+          { id: 'log_cleaner',    label: 'log-cleaner-thread',         drillable: false },
         ],
       },
       {
@@ -126,24 +165,13 @@ export const kafkaTemplate: ComponentTemplate = {
         ],
       },
       {
-        id: 'threads', name: 'Threads',
-        components: [
-          { id: 'net_handler',   label: 'network-handler-thread × N', drillable: false, tooltip: 'Accepts client connections and reads inbound request bytes via NIO selectors.' },
-          { id: 'req_handler',   label: 'request-handler-thread × N', drillable: false, tooltip: 'num.io.threads (default 8). Processes requests off the network queue — produce, fetch, metadata.' },
-          { id: 'io_thread',     label: 'I/O thread × N',             drillable: false, tooltip: 'Reads/writes log segment files on disk. Separate pool from network threads.' },
-          { id: 'ctrl_thread',   label: 'controller thread',          drillable: false, tooltip: 'Manages partition leadership and ISR changes across the cluster.' },
-          { id: 'fetcher_thread',label: 'replica-fetcher-thread',     drillable: false, tooltip: 'Follower brokers run one fetcher thread per leader they replicate from.' },
-          { id: 'log_cleaner',   label: 'log-cleaner-thread',         drillable: false },
-        ],
-      },
-      {
         id: 'app_modules', name: 'App modules',
         components: [
-          { id: 'log_manager',   label: 'LogManager',       drillable: false, tooltip: 'Owns all LogSegment objects for all partitions hosted on this broker.' },
-          { id: 'replica_mgr',   label: 'ReplicaManager',   drillable: false, tooltip: 'Manages leader/follower state per partition. Handles produce/fetch on behalf of replicas.' },
-          { id: 'kafka_ctrl',    label: 'KafkaController',  drillable: false, tooltip: 'One elected controller per cluster. Manages ISR shrink/expand, leader elections, topic changes.' },
-          { id: 'group_coord',   label: 'GroupCoordinator', drillable: false, tooltip: 'Manages consumer group membership, heartbeats, rebalancing, and offset commits.' },
-          { id: 'fetcher_mgr',   label: 'FetcherManager',   drillable: false },
+          { id: 'log_manager',  label: 'LogManager',       drillable: false, tooltip: 'Owns all LogSegment objects for all partitions hosted on this broker.' },
+          { id: 'replica_mgr',  label: 'ReplicaManager',   drillable: false, tooltip: 'Manages leader/follower state per partition. Handles produce/fetch on behalf of replicas.' },
+          { id: 'kafka_ctrl',   label: 'KafkaController',  drillable: false, tooltip: 'One elected controller per cluster. Manages ISR shrink/expand, leader elections, topic changes.' },
+          { id: 'group_coord',  label: 'GroupCoordinator', drillable: false, tooltip: 'Manages consumer group membership, heartbeats, rebalancing, and offset commits.' },
+          { id: 'fetcher_mgr',  label: 'FetcherManager',   drillable: false },
         ],
       },
     ],
@@ -155,7 +183,7 @@ export const kafkaTemplate: ComponentTemplate = {
     'topic':          ['log_manager', 'replica_mgr', 'page_cache', 'memory', 'disk'],
     'consumer_group': ['group_coord', 'net_handler', 'req_handler'],
     'producer':       ['net_handler', 'req_handler', 'direct_buffers', 'socket_buffers'],
-    // A1 D2 → A2
+    // A1 topic D2 → A2
     'partition':      ['log_manager', 'io_thread', 'page_cache', 'sendfile', 'memory', 'disk'],
     'offset':         ['group_coord', 'req_handler'],
     'replica':        ['replica_mgr', 'fetcher_thread', 'network', 'tcp_stack'],
@@ -163,7 +191,13 @@ export const kafkaTemplate: ComponentTemplate = {
     'log_segment':    ['io_thread', 'page_cache', 'sendfile', 'disk', 'sectors'],
     'offset_index':   ['io_thread', 'memory', 'ram_pages'],
     'time_index':     ['io_thread', 'memory'],
-    // A1 D3 → A2 (Java classes → JVM + hardware)
+    // A1 consumer_group D2 → A2
+    'cg_member':            ['group_coord', 'net_handler', 'cpu'],
+    'partition_assignment': ['group_coord', 'kafka_ctrl', 'req_handler'],
+    'committed_offset':     ['group_coord', 'disk', 'req_handler'],
+    'heartbeat':            ['group_coord', 'net_handler', 'cpu'],
+    'rebalance':            ['group_coord', 'kafka_ctrl', 'net_handler', 'cpu'],
+    // A1 D3 partition → A2
     'LogSegment':     ['log_manager', 'io_thread', 'jvm_heap', 'disk', 'page_cache'],
     'AbstractIndex':  ['io_thread', 'jvm_heap', 'memory', 'ram_pages'],
     'RecordBatch':    ['direct_buffers', 'page_cache', 'memory'],

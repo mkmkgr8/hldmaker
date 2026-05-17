@@ -10,11 +10,12 @@ interface ChipNodeProps {
   drillable: boolean
   tooltip?: string
   active?: boolean
-  highlighted?: boolean
   crossHighlighted?: boolean
   colorScheme?: 'blue' | 'purple' | 'teal'
   icon?: LucideIcon
+  expanded?: boolean
   onClick?: (id: string) => void
+  onExpand?: (id: string) => void  // if provided, chevron click is separate from body click
 }
 
 const scheme = {
@@ -25,8 +26,9 @@ const scheme = {
 
 export default function ChipNode({
   id, label, drillable, tooltip,
-  active = false, highlighted: _highlighted = false, crossHighlighted = false,
-  colorScheme = 'blue', icon: Icon, onClick,
+  active = false, crossHighlighted = false,
+  colorScheme = 'blue', icon: Icon,
+  expanded = false, onClick, onExpand,
 }: ChipNodeProps) {
   const [showTooltip, setShowTooltip] = useState(false)
   const s = scheme[colorScheme]
@@ -38,34 +40,73 @@ export default function ChipNode({
     ? '0 0 0 2px rgba(244,162,89,0.2), 0 0 12px rgba(244,162,89,0.1)'
     : active ? s.activeShadow : 'none'
 
+  // When onExpand is provided, body click = cross-links, chevron click = expand.
+  // When onExpand is absent, single click handles everything (A2 chips, D3 chips).
+  const hasSplitBehavior = drillable && !!onExpand
+
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>
-      <button
-        onClick={() => onClick?.(id)}
+      <div
+        role="button"
+        tabIndex={0}
         onMouseEnter={() => tooltip && setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
+        onClick={() => !hasSplitBehavior && onClick?.(id)}
+        onKeyDown={e => e.key === 'Enter' && !hasSplitBehavior && onClick?.(id)}
         style={{
-          display: 'inline-flex', alignItems: 'center', gap: 4,
+          display: 'inline-flex', alignItems: 'center', gap: 0,
           fontFamily: 'var(--font-mono)', fontSize: 11,
-          padding: '3px 8px', borderRadius: 'var(--r-sm)',
+          borderRadius: 'var(--r-sm)',
           background: bg, border: `1px solid ${border}`,
           color, boxShadow: shadow,
-          cursor: drillable ? 'pointer' : 'default',
+          cursor: 'pointer',
           transition: 'all 140ms var(--ease)',
           fontWeight: active ? 500 : 400,
           userSelect: 'none',
           whiteSpace: 'nowrap',
+          overflow: 'hidden',
         }}
       >
-        {Icon && <Icon size={10} style={{ flexShrink: 0, opacity: 0.75 }} />}
-        {label}
+        {/* Chip body — click = cross-links */}
+        <div
+          onClick={hasSplitBehavior ? e => { e.stopPropagation(); onClick?.(id) } : undefined}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 7px' }}
+        >
+          {Icon && <Icon size={10} style={{ flexShrink: 0, opacity: 0.75 }} />}
+          {label}
+        </div>
+
+        {/* Chevron — click = expand/collapse D2 or D3 */}
         {drillable && (
-          <ChevronDown
-            size={9}
-            style={{ transform: active ? 'rotate(180deg)' : 'none', transition: 'transform 120ms var(--ease)', opacity: 0.6 }}
-          />
+          <div
+            role="button"
+            tabIndex={-1}
+            onClick={e => {
+              e.stopPropagation()
+              if (hasSplitBehavior) onExpand(id)
+              else onClick?.(id)
+            }}
+            style={{
+              display: 'inline-flex', alignItems: 'center',
+              padding: '3px 6px 3px 2px',
+              borderLeft: hasSplitBehavior ? `1px solid ${border}` : 'none',
+              opacity: 0.7,
+              transition: 'opacity 120ms',
+            }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '0.7'}
+          >
+            <ChevronDown
+              size={9}
+              style={{
+                transform: (hasSplitBehavior ? expanded : active) ? 'rotate(180deg)' : 'none',
+                transition: 'transform 120ms var(--ease)',
+              }}
+            />
+          </div>
         )}
-      </button>
+      </div>
+
       {showTooltip && tooltip && (
         <div style={{
           position: 'absolute', zIndex: 50, bottom: '100%', left: 0, marginBottom: 6,

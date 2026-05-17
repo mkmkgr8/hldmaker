@@ -12,8 +12,10 @@ interface DepthBlockProps {
   nodes: TemplateChipNode[]
   colorScheme?: 'blue' | 'purple' | 'teal'
   activeNodeId?: string | null
+  expandedNodeId?: string | null   // which node has its drill expanded
   highlightedIds?: string[]
-  onChipClick?: (id: string, drillable: boolean) => void
+  onChipClick?: (id: string) => void
+  onChipExpand?: (id: string) => void  // expand chevron handler (only for drillable nodes)
   defaultExpanded?: boolean
   iconMap?: Partial<Record<string, LucideIcon>>
 }
@@ -26,7 +28,8 @@ const depthBg: Record<number, string> = {
 
 export default function DepthBlock({
   depthNum, label, nodes, colorScheme = 'blue',
-  activeNodeId, highlightedIds = [], onChipClick,
+  activeNodeId, expandedNodeId, highlightedIds = [],
+  onChipClick, onChipExpand,
   defaultExpanded = true, iconMap = {},
 }: DepthBlockProps) {
   const [expanded, setExpanded] = useState(defaultExpanded)
@@ -81,7 +84,9 @@ export default function DepthBlock({
                 active={activeNodeId === chip.id}
                 crossHighlighted={highlightedIds.includes(chip.id)}
                 icon={iconMap[chip.id]}
-                onClick={id => onChipClick?.(id, chip.drillable)}
+                expanded={expandedNodeId === chip.id}
+                onClick={id => onChipClick?.(id)}
+                onExpand={chip.drillable && onChipExpand ? id => onChipExpand(id) : undefined}
               />
             ))}
           </div>

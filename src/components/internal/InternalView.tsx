@@ -46,11 +46,15 @@ export default function InternalView() {
 
   const handleTopologyChange = (t: Topology) => updateNodeTopology(node.id, t)
 
-  const allAxis1ChipIds = [
-    ...template.axis1.d1.nodes,
-    ...template.axis1.d2.nodes,
-    ...template.axis1.d3.nodes,
-  ].map(c => c.id)
+  const allAxis1ChipIds = [...new Set(
+    template.axis1.d1.nodes.flatMap(n1 => [
+      n1.id,
+      ...(n1.d2?.nodes ?? []).flatMap(n2 => [
+        n2.id,
+        ...(n2.d3?.nodes ?? []).map(n3 => n3.id),
+      ]),
+    ])
+  )]
 
   const handleAxis1ChipSelect = (id: string | null) => {
     if (!id) { setAxis2HighlightIds([]); setAxis1HighlightIds([]); return }

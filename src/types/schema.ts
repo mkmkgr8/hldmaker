@@ -88,24 +88,24 @@ export interface TemplateChipNode {
   label: string
   drillable: boolean
   tooltip?: string
-  sub_chips?: TemplateChipNode[]   // one level of inline expansion (e.g. CPU → cores, L3 cache)
+  sub_chips?: TemplateChipNode[]   // A2 hardware: inline sub-chip expansion
+  d2?: Axis1Depth                  // A1 D1 node: its own D2 content (context-sensitive)
+  d3?: Axis1Depth                  // A1 D2 node: its own D3 content (DAG — same id can appear under multiple parents)
 }
 
 // ── Axis 1 — Service internals ─────────────────────────────────────────────
 // D1: API surface (tables, topics, keys)
-// D2: Internal implementation (B-tree, log segment, skiplist)
-// D3: Language-level constructs (C structs, Java classes)
+// D2: Internal implementation — per D1 node (node.d2)
+// D3: Language-level constructs — per D2 node (node.d3), forming a DAG not a tree
 
 export interface Axis1Depth {
   label: string
-  parent?: string                  // which D(n-1) chip id must be selected to reveal this depth
   nodes: TemplateChipNode[]
 }
 
 export interface Axis1 {
   d1: Axis1Depth
-  d2: Axis1Depth
-  d3: Axis1Depth
+  // D2 and D3 are now defined inline on each drillable TemplateChipNode
 }
 
 // ── Axis 2 — Execution stack ───────────────────────────────────────────────
@@ -117,6 +117,7 @@ export interface Axis2Layer {
                                    // 'threads' | 'app_modules' | 'container' | 'container_runtime'
   name: string                     // display label
   topology_condition?: Topology[]  // absent = always shown; present = only when topology matches
+  nested_in?: string               // render as sub-section inside another layer (e.g. 'threads' inside 'process')
   components: TemplateChipNode[]
 }
 
