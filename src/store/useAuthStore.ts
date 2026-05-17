@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { User, Session } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
+import { supabase, supabaseConfigured } from '../lib/supabase'
 
 interface AuthStore {
   user: User | null
@@ -30,11 +30,14 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 }))
 
-// Bootstrap auth state on module load
-supabase.auth.getSession().then(({ data: { session } }) => {
-  useAuthStore.setState({ session, user: session?.user ?? null, loading: false })
-})
-
-supabase.auth.onAuthStateChange((_event, session) => {
-  useAuthStore.setState({ session, user: session?.user ?? null, loading: false })
-})
+// Bootstrap auth state on module load — no-op if Supabase not configured
+if (supabaseConfigured) {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    useAuthStore.setState({ session, user: session?.user ?? null, loading: false })
+  })
+  supabase.auth.onAuthStateChange((_event, session) => {
+    useAuthStore.setState({ session, user: session?.user ?? null, loading: false })
+  })
+} else {
+  useAuthStore.setState({ loading: false })
+}

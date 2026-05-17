@@ -90,18 +90,21 @@ export default function Toolbar() {
   return (
     <>
       <div style={S.bar}>
-        {/* Back to dashboard */}
-        <button
-          onClick={() => navigate('/')}
-          title="Back to designs"
-          style={S.iconBtn}
-          onMouseEnter={hoverIn('var(--ink-800)', 'var(--ink-100)')}
-          onMouseLeave={hoverOut('transparent', 'var(--ink-300)')}
-        >
-          <ArrowLeft size={14} />
-        </button>
-
-        <div style={S.divider} />
+        {/* Back to dashboard — only when authenticated */}
+        {user && (
+          <>
+            <button
+              onClick={() => navigate('/')}
+              title="Back to designs"
+              style={S.iconBtn}
+              onMouseEnter={hoverIn('var(--ink-800)', 'var(--ink-100)')}
+              onMouseLeave={hoverOut('transparent', 'var(--ink-300)')}
+            >
+              <ArrowLeft size={14} />
+            </button>
+            <div style={S.divider} />
+          </>
+        )}
 
         {/* Logo */}
         <div style={S.logo}>
@@ -161,30 +164,32 @@ export default function Toolbar() {
           {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
         </button>
 
-        {/* User avatar */}
-        <div
-          title={user?.email ?? ''}
-          style={{
-            width: 26, height: 26, borderRadius: '50%',
-            background: 'var(--electric)', color: '#08111d',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, flexShrink: 0,
-          }}
-        >
-          {initial}
-        </div>
-
-        <button
-          title="Sign out"
-          onClick={() => { signOut(); navigate('/auth') }}
-          style={S.iconBtn}
-          onMouseEnter={e => { e.currentTarget.style.background = 'var(--ink-800)'; e.currentTarget.style.color = 'var(--danger)' }}
-          onMouseLeave={hoverOut('transparent', 'var(--ink-300)')}
-        >
-          <LogOut size={13} />
-        </button>
-
-        <div style={S.divider} />
+        {/* User avatar + sign out — only when authenticated */}
+        {user && (
+          <>
+            <div
+              title={user.email ?? ''}
+              style={{
+                width: 26, height: 26, borderRadius: '50%',
+                background: 'var(--electric)', color: '#08111d',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, flexShrink: 0,
+              }}
+            >
+              {initial}
+            </div>
+            <button
+              title="Sign out"
+              onClick={() => { signOut(); navigate('/auth') }}
+              style={S.iconBtn}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--ink-800)'; e.currentTarget.style.color = 'var(--danger)' }}
+              onMouseLeave={hoverOut('transparent', 'var(--ink-300)')}
+            >
+              <LogOut size={13} />
+            </button>
+            <div style={S.divider} />
+          </>
+        )}
 
         {/* Run review */}
         <button
