@@ -1,4 +1,4 @@
-export type ComponentType = 'postgres' | 'redis' | 'kafka' | 'mysql'
+export type ComponentType = 'postgres' | 'redis' | 'kafka' | 'mysql' | 'java'
 // Adding a new service: add its name here, create src/data/templates/<name>.ts, export from index.ts
 
 export type Topology =
