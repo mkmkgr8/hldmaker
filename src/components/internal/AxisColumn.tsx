@@ -3,7 +3,7 @@ import { ArrowDown, Cpu, MemoryStick, HardDrive, Network, CircleDot, Activity, S
 import type { LucideProps } from 'lucide-react'
 import DepthBlock from './DepthBlock'
 import ChipNode from './ChipNode'
-import type { ComponentTemplate, ComponentType, TemplateChipNode, Topology, Axis2Layer } from '../../types/schema'
+import type { ComponentTemplate, ComponentType, TemplateChipNode, Topology, Axis2Layer, NodeConfig } from '../../types/schema'
 
 type LucideIcon = React.ComponentType<LucideProps>
 
@@ -12,6 +12,7 @@ interface AxisColumnProps {
   template: ComponentTemplate
   componentType: ComponentType
   currentTopology: Topology
+  nodeConfig?: NodeConfig
   mutationNodes?: TemplateChipNode[]
   mutationEdges?: Array<{ source: string; target: string; label: string; protocol: string }>
   highlightedIds?: string[]
@@ -47,9 +48,17 @@ const AxisHeader = ({ label, accent }: { label: string; accent: string }) => (
   </div>
 )
 
+// Resolve count_from → number from nodeConfig
+function resolveCount(countFrom: string | undefined, config: NodeConfig | undefined): number | undefined {
+  if (!countFrom || !config) return undefined
+  const key = countFrom.replace('config.', '')
+  const val = Number(config[key])
+  return isNaN(val) ? undefined : Math.max(1, val)
+}
+
 // ── Axis 1 ─────────────────────────────────────────────────────────────────
 
-function Axis1Column({ template, highlightedIds = [], onChipSelect }: AxisColumnProps) {
+function Axis1Column({ template, nodeConfig, highlightedIds = [], onChipSelect }: AxisColumnProps) {
   const { d1 } = template.axis1
 
   const [activeD1Id, setActiveD1Id]     = useState<string | null>(null)
@@ -62,6 +71,21 @@ function Axis1Column({ template, highlightedIds = [], onChipSelect }: AxisColumn
   const d2Nodes        = expandedD1Node?.d2?.nodes ?? []
   const expandedD2Node = d2Nodes.find(n => n.id === expandedD2Id)
   const d3Nodes        = expandedD2Node?.d3?.nodes ?? []
+
+  // Build countMap for each depth level from count_from on chip nodes
+  const buildCountMap = (nodes: typeof d1.nodes) => {
+    const map: Record<string, number> = {}
+    for (const n of nodes) {
+      if (n.count_from) {
+        const count = resolveCount(n.count_from, nodeConfig)
+        if (count !== undefined) map[n.id] = count
+      }
+    }
+    return map
+  }
+  const d1CountMap = buildCountMap(d1.nodes)
+  const d2CountMap = buildCountMap(d2Nodes)
+  const d3CountMap = buildCountMap(d3Nodes)
 
   const handleD1Click = (id: string) => {
     const next = activeD1Id === id ? null : id
@@ -101,6 +125,7 @@ function Axis1Column({ template, highlightedIds = [], onChipSelect }: AxisColumn
         depthNum={1} label={d1.label} nodes={d1.nodes} colorScheme="blue"
         activeNodeId={activeD1Id} expandedNodeId={expandedD1Id}
         highlightedIds={highlightedIds}
+        countMap={d1CountMap}
         onChipClick={handleD1Click}
         onChipExpand={handleD1Expand}
       />
@@ -114,6 +139,7 @@ function Axis1Column({ template, highlightedIds = [], onChipSelect }: AxisColumn
             depthNum={2} label={expandedD1Node.d2.label} nodes={d2Nodes} colorScheme="blue"
             activeNodeId={activeD2Id} expandedNodeId={expandedD2Id}
             highlightedIds={highlightedIds}
+            countMap={d2CountMap}
             onChipClick={handleD2Click}
             onChipExpand={handleD2Expand}
           />
@@ -129,6 +155,7 @@ function Axis1Column({ template, highlightedIds = [], onChipSelect }: AxisColumn
             depthNum={3} label={expandedD2Node.d3.label} nodes={d3Nodes} colorScheme="blue"
             activeNodeId={activeD3Id}
             highlightedIds={highlightedIds}
+            countMap={d3CountMap}
             onChipClick={handleD3Click}
           />
         </>
@@ -139,7 +166,18 @@ function Axis1Column({ template, highlightedIds = [], onChipSelect }: AxisColumn
 
 // ── Axis 2 ─────────────────────────────────────────────────────────────────
 
-function Axis2Column({ template, currentTopology, mutationNodes = [], mutationEdges = [], highlightedIds = [], onChipSelect }: AxisColumnProps) {
+function computeEmphasis(_chipId: string, def: { config_key: string; unit?: string; warn_above?: number; warn_below?: number }, config: NodeConfig | undefined): { badge: string; warn: boolean } | null {
+  if (!config) return null
+  const raw = config[def.config_key]
+  if (raw === undefined || raw === '') return null
+  const badge = def.unit ? `${raw} ${def.unit}` : String(raw)
+  const num = Number(raw)
+  const warn = (!isNaN(num) && def.warn_above !== undefined && num > def.warn_above) ||
+               (!isNaN(num) && def.warn_below !== undefined && num < def.warn_below)
+  return { badge, warn }
+}
+
+function Axis2Column({ template, nodeConfig, currentTopology, mutationNodes = [], mutationEdges = [], highlightedIds = [], onChipSelect }: AxisColumnProps) {
   const [activeChipId, setActiveChipId] = useState<string | null>(null)
   const [expandedSubChip, setExpandedSubChip] = useState<Record<string, string | null>>({})
 
@@ -222,6 +260,8 @@ function Axis2Column({ template, currentTopology, mutationNodes = [], mutationEd
                     {layer.components.map(chip => {
                       const expanded = expandedSubChip[layer.id] === chip.id
                       const Icon = resourceIconMap[chip.id]
+                      const emp = template.chip_emphasis?.[chip.id]
+                      const empResult = emp ? computeEmphasis(chip.id, emp, nodeConfig) : null
                       return (
                         <div key={chip.id}>
                           <ChipNode
@@ -231,6 +271,8 @@ function Axis2Column({ template, currentTopology, mutationNodes = [], mutationEd
                             active={activeChipId === chip.id}
                             crossHighlighted={highlightedIds.includes(chip.id)}
                             icon={Icon}
+                            configBadge={empResult?.badge}
+                            configWarn={empResult?.warn}
                             onClick={() => chip.sub_chips?.length ? handleDrillableClick(layer.id, chip.id) : handleChipClick(chip.id)}
                           />
                           {expanded && chip.sub_chips && (
@@ -257,6 +299,8 @@ function Axis2Column({ template, currentTopology, mutationNodes = [], mutationEd
                       const expanded = !!chip.sub_chips?.length && expandedSubChip[layer.id] === chip.id
                       const Icon = isProcess ? (processIconMap[chip.id] ?? CircleDot) : undefined
                       const colorScheme = (layer.id === 'os' || layer.id === 'container' || layer.id === 'container_runtime' || layer.id === 'process') ? 'teal' : 'purple'
+                      const emp2 = template.chip_emphasis?.[chip.id]
+                      const emp2Result = emp2 ? computeEmphasis(chip.id, emp2, nodeConfig) : null
                       return (
                         <div key={chip.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                           <ChipNode
@@ -266,6 +310,8 @@ function Axis2Column({ template, currentTopology, mutationNodes = [], mutationEd
                             active={activeChipId === chip.id}
                             crossHighlighted={highlightedIds.includes(chip.id)}
                             icon={Icon}
+                            configBadge={emp2Result?.badge}
+                            configWarn={emp2Result?.warn}
                             onClick={() => chip.sub_chips?.length ? handleDrillableClick(layer.id, chip.id) : handleChipClick(chip.id)}
                           />
                           {expanded && chip.sub_chips && (
@@ -301,17 +347,23 @@ function Axis2Column({ template, currentTopology, mutationNodes = [], mutationEd
                       {nestedLayer.name}
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                      {nestedLayer.components.map(chip => (
-                        <ChipNode
-                          key={chip.id} id={chip.id} label={chip.label}
-                          drillable={false} tooltip={chip.tooltip}
-                          colorScheme="purple"
-                          active={activeChipId === chip.id}
-                          crossHighlighted={highlightedIds.includes(chip.id)}
-                          icon={processIconMap[chip.id]}
-                          onClick={() => handleChipClick(chip.id)}
-                        />
-                      ))}
+                      {nestedLayer.components.map(chip => {
+                        const empN = template.chip_emphasis?.[chip.id]
+                        const empNResult = empN ? computeEmphasis(chip.id, empN, nodeConfig) : null
+                        return (
+                          <ChipNode
+                            key={chip.id} id={chip.id} label={chip.label}
+                            drillable={false} tooltip={chip.tooltip}
+                            colorScheme="purple"
+                            active={activeChipId === chip.id}
+                            crossHighlighted={highlightedIds.includes(chip.id)}
+                            icon={processIconMap[chip.id]}
+                            configBadge={empNResult?.badge}
+                            configWarn={empNResult?.warn}
+                            onClick={() => handleChipClick(chip.id)}
+                          />
+                        )
+                      })}
                     </div>
                   </div>
                 )}

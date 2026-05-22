@@ -10,8 +10,10 @@ const groups: {
   {
     cat: 'Databases', color: 'var(--cat-db)',
     items: [
-      { type: 'postgres', name: 'PostgreSQL', svg: '/services/postgresql.svg' },
-      { type: 'mysql',    name: 'MySQL',      svg: '/services/mysql.svg' },
+      { type: 'postgres',      name: 'PostgreSQL',    svg: '/services/postgresql.svg' },
+      { type: 'mysql',         name: 'MySQL',         svg: '/services/mysql.svg' },
+      { type: 'mongodb',       name: 'MongoDB',       svg: '/services/mongodb.svg' },
+      { type: 'elasticsearch', name: 'Elasticsearch', svg: '/services/elasticsearch.svg' },
     ],
   },
   {
@@ -24,6 +26,12 @@ const groups: {
     cat: 'Caches', color: 'var(--cat-cache)',
     items: [
       { type: 'redis', name: 'Redis', svg: '/services/redis.svg' },
+    ],
+  },
+  {
+    cat: 'Infrastructure', color: 'var(--cat-network)',
+    items: [
+      { type: 'nginx', name: 'Nginx', svg: '/services/nginx.svg' },
     ],
   },
 ]

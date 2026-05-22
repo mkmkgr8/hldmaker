@@ -240,6 +240,12 @@ export const redisTemplate: ComponentTemplate = {
     },
   },
 
+  chip_emphasis: {
+    jemalloc:    { config_key: 'maxmemory' },
+    io_threads:  { config_key: 'io_threads', unit: 'threads', warn_above: 4 },
+    main_thread: { config_key: 'eviction_policy' },
+  },
+
   tier1_insights: [
     { severity: 'warning', text: 'Single-threaded event loop — one KEYS *, LRANGE 0 -1 on a huge list, or slow Lua script blocks every client globally for the duration.' },
     { severity: 'info',    text: 'In-memory first. Disk is for persistence only. RDB fork uses copy-on-write — memory can temporarily double during snapshot under heavy write load.' },

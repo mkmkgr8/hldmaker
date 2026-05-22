@@ -14,6 +14,9 @@ interface ChipNodeProps {
   colorScheme?: 'blue' | 'purple' | 'teal'
   icon?: LucideIcon
   expanded?: boolean
+  countBadge?: number    // ×N indicator from count_from
+  configBadge?: string   // config value badge e.g. "6 GB"
+  configWarn?: boolean   // amber ring when config value exceeds threshold
   onClick?: (id: string) => void
   onExpand?: (id: string) => void  // if provided, chevron click is separate from body click
 }
@@ -28,17 +31,19 @@ export default function ChipNode({
   id, label, drillable, tooltip,
   active = false, crossHighlighted = false,
   colorScheme = 'blue', icon: Icon,
-  expanded = false, onClick, onExpand,
+  expanded = false, countBadge, configBadge, configWarn = false,
+  onClick, onExpand,
 }: ChipNodeProps) {
   const [showTooltip, setShowTooltip] = useState(false)
   const s = scheme[colorScheme]
 
-  const bg     = crossHighlighted ? 'rgba(244,162,89,0.1)'  : active ? s.activeBg     : s.bg
-  const border = crossHighlighted ? 'rgba(244,162,89,0.65)' : active ? s.activeBorder  : s.border
+  const warnActive = configWarn && !crossHighlighted
+  const bg     = crossHighlighted ? 'rgba(244,162,89,0.1)'  : warnActive ? 'rgba(244,162,89,0.06)' : active ? s.activeBg     : s.bg
+  const border = crossHighlighted ? 'rgba(244,162,89,0.65)' : warnActive ? 'rgba(244,162,89,0.5)'  : active ? s.activeBorder  : s.border
   const color  = crossHighlighted ? 'var(--warn)'           : active ? s.activeBorder  : s.text
   const shadow = crossHighlighted
     ? '0 0 0 2px rgba(244,162,89,0.2), 0 0 12px rgba(244,162,89,0.1)'
-    : active ? s.activeShadow : 'none'
+    : warnActive ? '0 0 0 1px rgba(244,162,89,0.25)' : active ? s.activeShadow : 'none'
 
   // When onExpand is provided, body click = cross-links, chevron click = expand.
   // When onExpand is absent, single click handles everything (A2 chips, D3 chips).
@@ -74,6 +79,28 @@ export default function ChipNode({
         >
           {Icon && <Icon size={10} style={{ flexShrink: 0, opacity: 0.75 }} />}
           {label}
+          {countBadge !== undefined && countBadge > 1 && (
+            <span style={{
+              fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 600,
+              color: s.text, opacity: 0.7,
+              background: `${border}22`, border: `1px solid ${border}55`,
+              padding: '0 4px', borderRadius: 'var(--r-xs)', lineHeight: '14px',
+            }}>
+              ×{countBadge}
+            </span>
+          )}
+          {configBadge && (
+            <span style={{
+              fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 600,
+              color: configWarn ? 'var(--warn)' : 'var(--ink-400)',
+              background: configWarn ? 'rgba(244,162,89,0.1)' : 'rgba(255,255,255,0.05)',
+              border: `1px solid ${configWarn ? 'rgba(244,162,89,0.4)' : 'rgba(255,255,255,0.1)'}`,
+              padding: '0 4px', borderRadius: 'var(--r-xs)', lineHeight: '14px',
+              marginLeft: 1,
+            }}>
+              {configBadge}
+            </span>
+          )}
         </div>
 
         {/* Chevron — click = expand/collapse D2 or D3 */}

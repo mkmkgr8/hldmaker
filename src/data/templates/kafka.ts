@@ -39,6 +39,7 @@ export const kafkaTemplate: ComponentTemplate = {
             nodes: [
               {
                 id: 'partition', label: 'Partition', drillable: true,
+                count_from: 'config.partition_count',
                 tooltip: 'Unit of parallelism and ordering. One active consumer per partition per group.',
                 d3: {
                   label: 'Java internals — partition',
@@ -226,6 +227,12 @@ export const kafkaTemplate: ComponentTemplate = {
       add_nodes: [{ id: '__broker', label: 'Broker', count_from: 'config.broker_count', axis: 'axis2' }],
       add_edges: [{ source: '__broker', target: '__broker', label: 'replication', protocol: 'TCP' }],
     },
+  },
+
+  chip_emphasis: {
+    jvm_heap:    { config_key: 'jvm_heap_gb',        unit: 'GB',      warn_above: 12 },
+    replica_mgr: { config_key: 'replication_factor', unit: 'RF' },
+    net_handler: { config_key: 'broker_count',        unit: 'brokers' },
   },
 
   tier1_insights: [

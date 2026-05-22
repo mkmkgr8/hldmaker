@@ -4,6 +4,9 @@ import { redisTemplate } from './redis'
 import { kafkaTemplate } from './kafka'
 import { mysqlTemplate } from './mysql'
 import { javaTemplate } from './java'
+import { nginxTemplate } from './nginx'
+import { mongodbTemplate } from './mongodb'
+import { elasticsearchTemplate } from './elasticsearch'
 
 export const templates: Record<ComponentType, ComponentTemplate> = {
   postgres: postgresTemplate,
@@ -11,4 +14,7 @@ export const templates: Record<ComponentType, ComponentTemplate> = {
   kafka: kafkaTemplate,
   mysql: mysqlTemplate,
   java: javaTemplate,
+  nginx: nginxTemplate,
+  mongodb: mongodbTemplate,
+  elasticsearch: elasticsearchTemplate,
 }

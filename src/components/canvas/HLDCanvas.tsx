@@ -153,7 +153,10 @@ export default function HLDCanvas() {
         <MiniMap
           nodeColor={(n) => {
             const dn = designNodes.find(d => d.id === n.id)
-            const colorMap: Record<string, string> = { postgres: '#93c5fd', redis: '#fca5a5', kafka: '#fdba74', mysql: '#fcd34d' }
+            const colorMap: Record<string, string> = {
+              postgres: '#93c5fd', redis: '#fca5a5', kafka: '#fdba74', mysql: '#fcd34d',
+              nginx: '#7cc4ff', mongodb: '#7ce29d', elasticsearch: '#ffd166',
+            }
             return colorMap[dn?.type ?? ''] ?? '#e2e8f0'
           }}
           className="!bg-white !border !border-slate-200 !rounded-lg"

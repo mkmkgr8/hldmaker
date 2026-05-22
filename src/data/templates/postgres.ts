@@ -210,6 +210,12 @@ export const postgresTemplate: ComponentTemplate = {
     },
   },
 
+  chip_emphasis: {
+    backend:        { config_key: 'max_connections', unit: 'conns',  warn_above: 300 },
+    shared_buffers: { config_key: 'shared_buffers' },
+    wal_writer:     { config_key: 'wal_mode' },
+  },
+
   tier1_insights: [
     { severity: 'info',    text: 'One OS process per connection — RAM and context-switch cost grows linearly. 300+ connections is serious overhead.' },
     { severity: 'info',    text: 'Two cache layers: shared_buffers (PG-managed, ~25% RAM) then OS page cache. Tuning shared_buffers too high starves the OS.' },

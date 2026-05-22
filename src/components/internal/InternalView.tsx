@@ -147,6 +147,7 @@ export default function InternalView() {
             template={template}
             componentType={node.type}
             currentTopology={node.topology}
+            nodeConfig={node.config}
             highlightedIds={axis1HighlightIds}
             onChipSelect={handleAxis1ChipSelect}
           />
@@ -155,6 +156,7 @@ export default function InternalView() {
             template={template}
             componentType={node.type}
             currentTopology={node.topology}
+            nodeConfig={node.config}
             mutationNodes={mutationChips}
             mutationEdges={mutationEdges}
             highlightedIds={axis2HighlightIds}

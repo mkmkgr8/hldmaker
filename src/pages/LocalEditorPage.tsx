@@ -1,11 +1,8 @@
-/**
- * Local testing editor — no auth, no Supabase, pure in-memory Zustand.
- * Used on the local-testing branch only.
- * LLM eval still works via VITE_ANTHROPIC_API_KEY in .env.local.
- */
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useDesignStore } from '../store/useDesignStore'
 import { useUIStore } from '../store/useUIStore'
+import { localDesigns } from '../lib/localDesigns'
 import Toolbar from '../components/toolbar/Toolbar'
 import ComponentPalette from '../components/toolbar/ComponentPalette'
 import HLDCanvas from '../components/canvas/HLDCanvas'
@@ -14,8 +11,34 @@ import InternalView from '../components/internal/InternalView'
 import EvalPanel from '../components/evaluation/EvalPanel'
 
 export default function LocalEditorPage() {
-  const { removeNode } = useDesignStore()
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const { design, loadFullDesign, removeNode } = useDesignStore()
   const { view, evalPanelOpen, selectedNodeId, setSelectedNode } = useUIStore()
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const loadedId = useRef<string | null>(null)
+
+  // Load design from localStorage on mount
+  useEffect(() => {
+    if (!id) { navigate('/', { replace: true }); return }
+    const saved = localDesigns.get(id)
+    if (!saved) { navigate('/', { replace: true }); return }
+    loadFullDesign(saved)
+    loadedId.current = id
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
+
+  // Auto-save on design changes (debounced 800ms)
+  useEffect(() => {
+    if (!loadedId.current || design.id !== loadedId.current) return
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => {
+      localDesigns.save(design)
+    }, 800)
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current)
+    }
+  }, [design])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

@@ -1,4 +1,4 @@
-export type ComponentType = 'postgres' | 'redis' | 'kafka' | 'mysql' | 'java'
+export type ComponentType = 'postgres' | 'redis' | 'kafka' | 'mysql' | 'java' | 'nginx' | 'mongodb' | 'elasticsearch'
 // Adding a new service: add its name here, create src/data/templates/<name>.ts, export from index.ts
 
 export type Topology =
@@ -88,6 +88,7 @@ export interface TemplateChipNode {
   label: string
   drillable: boolean
   tooltip?: string
+  count_from?: string              // e.g. 'config.partition_count' — shows ×N badge
   sub_chips?: TemplateChipNode[]   // A2 hardware: inline sub-chip expansion
   d2?: Axis1Depth                  // A1 D1 node: its own D2 content (context-sensitive)
   d3?: Axis1Depth                  // A1 D2 node: its own D3 content (DAG — same id can appear under multiple parents)
@@ -134,6 +135,15 @@ export interface Axis2 {
 // A2 → A1 reverse links: derived at runtime by scanning A1 chip keys.
 // A2 → A2 internal links: defined explicitly (e.g. jvm_heap → memory).
 export type CrossLinkMap = Record<string, string[]>
+
+// ── Chip emphasis — config-driven visual annotation on Axis 2 chips ───────
+
+export interface ChipEmphasisDef {
+  config_key: string     // key in node.config
+  unit?: string          // display unit appended to value
+  warn_above?: number    // show amber ring if value > this
+  warn_below?: number    // show amber ring if value < this
+}
 
 // ── Config schema ─────────────────────────────────────────────────────────
 
@@ -190,6 +200,7 @@ export interface ComponentTemplate {
   axis2: Axis2
   cross_links: CrossLinkMap
   topology_mutations: Partial<Record<Topology, TopologyMutation>>
+  chip_emphasis?: Record<string, ChipEmphasisDef>
   tier1_insights: Tier1Insight[]
 }
 

@@ -30,6 +30,7 @@ interface DesignStore {
   importDesign: (json: string) => void
   resetDesign: () => void
   loadDesignFromDB: (id: string, canvas: Canvas, name: string) => void
+  loadFullDesign: (design: Design) => void
   applyRemoteCanvas: (canvas: Canvas) => void
 }
 
@@ -73,6 +74,8 @@ export const useDesignStore = create<DesignStore>((set, get) => ({
       canvas,
     },
   }),
+
+  loadFullDesign: (design) => set({ design, currentDesignId: design.id }),
 
   applyRemoteCanvas: (canvas) => set(s => ({
     design: { ...s.design, canvas },

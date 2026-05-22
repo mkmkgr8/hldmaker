@@ -9,4 +9,8 @@ export const rulesByType: Record<ComponentType, Tier2Rule[]> = {
   redis: redisRules,
   kafka: kafkaRules,
   mysql: mysqlRules,
+  java: [],
+  nginx: [],
+  mongodb: [],
+  elasticsearch: [],
 }

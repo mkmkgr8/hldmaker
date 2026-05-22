@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import LocalDashboardPage from './pages/LocalDashboardPage'
 import LocalEditorPage from './pages/LocalEditorPage'
 import AuthGuard from './components/auth/AuthGuard'
 import AuthPage from './pages/AuthPage'
@@ -15,7 +16,9 @@ export default function App() {
     return (
       <BrowserRouter>
         <Routes>
-          <Route path="*" element={<LocalEditorPage />} />
+          <Route path="/" element={<LocalDashboardPage />} />
+          <Route path="/edit/:id" element={<LocalEditorPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     )

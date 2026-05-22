@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Download, Upload, RotateCcw, Cpu, Sun, Moon, ArrowLeft, LogOut } from 'lucide-react'
+import { Download, Upload, RotateCcw, Cpu, Sun, Moon, ArrowLeft, LogOut, Image } from 'lucide-react'
+import { toPng } from 'html-to-image'
 import { useDesignStore } from '../../store/useDesignStore'
 import { useUIStore } from '../../store/useUIStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -87,6 +88,19 @@ export default function Toolbar() {
     if (confirm('Reset canvas? All nodes and edges will be removed.')) resetDesign()
   }
 
+  const handleExportPng = async () => {
+    const el = document.querySelector('.react-flow') as HTMLElement | null
+    if (!el) return
+    const bg = theme === 'dark' ? '#0b0e14' : '#f4f6f9'
+    try {
+      const dataUrl = await toPng(el, { backgroundColor: bg, pixelRatio: 2 })
+      const a = document.createElement('a')
+      a.href = dataUrl
+      a.download = `${design.meta.name || 'diagram'}.png`
+      a.click()
+    } catch { /* canvas taint from external SVGs — ignore */ }
+  }
+
   return (
     <>
       <div style={S.bar}>
@@ -132,6 +146,15 @@ export default function Toolbar() {
           onMouseLeave={hoverOut('transparent', 'var(--ink-200)')}
         >
           <Download size={13} /> Export
+        </button>
+        <button
+          style={S.btnGhost}
+          onClick={handleExportPng}
+          title="Export canvas as PNG"
+          onMouseEnter={hoverIn('var(--ink-800)', 'var(--ink-100)')}
+          onMouseLeave={hoverOut('transparent', 'var(--ink-200)')}
+        >
+          <Image size={13} /> PNG
         </button>
         <button
           style={S.btnGhost}
